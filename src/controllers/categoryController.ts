@@ -19,6 +19,39 @@ export async function getCategories(req: Request, res: Response, next: NextFunct
   }
 }
 
+export async function getCategoryBySlug(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { slug } = req.params
+    if (!slug || typeof slug !== "string") {
+      return res.status(400).json({
+        status: 400,
+        error: "Bad Request",
+        message: "Неверный slug категории",
+      })
+    }
+
+    const categoryData = await db.query.category.findFirst({
+      where: eq(category.linkName, slug),
+      with: {
+        products: true,
+      },
+    })
+
+    if (!categoryData) {
+      return res.status(404).json({
+        error: "Not Found",
+        message: "Категория не найдена",
+      })
+    }
+
+    return res.status(200).json(categoryData)
+  } catch (error) {
+    console.error("Ошибка при получении категории по slug:", error)
+    res.status(500)
+    next(error)
+  }
+}
+
 export async function createCategory(req: Request, res: Response, next: NextFunction) {
   try {
     const { name, specifications, images } = req.body

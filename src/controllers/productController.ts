@@ -10,13 +10,27 @@ import path from "path"
 
 export async function getProducts(req: Request, res: Response, next: NextFunction) {
   try {
-    const query = req.query
-    if (query.popular === "true") {
+    const { popular, categoryId } = req.query
+
+    if (categoryId) {
+      const id = Number(categoryId)
+      if (isNaN(id)) {
+        return res.status(400).json({
+          error: "Bad Request",
+          message: "Некорректный ID категории",
+        })
+      }
+      const productsByCategory = await db.query.product.findMany({
+        where: eq(product.categoryId, id),
+      })
+      return res.status(200).json(productsByCategory)
+    }
+
+    if (popular === "true") {
       const popularProducts = await db.query.product.findMany({
         where: eq(product.isPopular, true),
       })
-      res.status(200).json(popularProducts)
-      return
+      return res.status(200).json(popularProducts)
     }
 
     const products = await db.query.product.findMany()
@@ -28,25 +42,28 @@ export async function getProducts(req: Request, res: Response, next: NextFunctio
   }
 }
 
-export async function getProductById(req: Request, res: Response, next: NextFunction) {
+export async function getProductBySlug(req: Request, res: Response, next: NextFunction) {
   try {
-    const id = Number(req.params.id)
-    if (isNaN(id)) {
+    const slug = req.params.productName as string
+
+    if (!slug || slug.length === 0) {
       return res.status(400).json({
         error: "Bad Request",
-        message: "Некорректный ID продукта",
+        message: "Некорректный имя продукта",
       })
     }
-    const productById = await db.query.product.findFirst({
-      where: eq(product.id, id),
+
+    const productBySlug = await db.query.product.findFirst({
+      where: eq(product.linkName, slug),
     })
-    if (!productById) {
+
+    if (!productBySlug) {
       return res.status(404).json({
         error: "Not Found",
         message: "Продукт не найден",
       })
     }
-    res.status(200).json(productById)
+    return res.status(200).json(productBySlug)
   } catch (error) {
     console.error("Ошибка при получении продукта по ID:", error)
     res.status(500)
@@ -77,7 +94,6 @@ export async function createProduct(req: Request, res: Response, next: NextFunct
         images,
       })
       .returning()
-    console.log("Создан продукт:", newProduct[0])
     res.status(201).json(newProduct[0])
   } catch (error) {
     console.error("Ошибка при создании продукта:", error)

@@ -1,7 +1,7 @@
 import {
   createProduct,
   deleteProduct,
-  getProductById,
+  getProductBySlug,
   getProducts,
   updateProduct,
 } from "@/controllers/productController"
@@ -11,7 +11,7 @@ import { Router } from "express"
 const router = Router()
 
 router.get("/", getProducts)
-router.get("/:id", getProductById)
+router.get("/:productName", getProductBySlug)
 
 router.post("/", protectedRoute, requireAdmin, createProduct)
 router.put("/:id", protectedRoute, requireAdmin, updateProduct)
