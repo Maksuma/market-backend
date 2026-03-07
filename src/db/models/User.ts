@@ -1,5 +1,7 @@
 import { relations } from "drizzle-orm"
 import { boolean, index, pgTable, text, timestamp } from "drizzle-orm/pg-core"
+import { cart } from "./Cart"
+import { order } from "./Order"
 import { review } from "./Review"
 
 export const user = pgTable("user", {
@@ -79,10 +81,15 @@ export const verification = pgTable(
   table => [index("verification_identifier_idx").on(table.identifier)],
 )
 
-export const userRelations = relations(user, ({ many }) => ({
+export const userRelations = relations(user, ({ many, one }) => ({
   sessions: many(session),
   accounts: many(account),
   reviews: many(review),
+  cart: one(cart, {
+    fields: [user.id],
+    references: [cart.userId],
+  }),
+  orders: many(order),
 }))
 
 export const sessionRelations = relations(session, ({ one }) => ({
