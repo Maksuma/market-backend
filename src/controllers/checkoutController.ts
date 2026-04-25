@@ -54,6 +54,11 @@ export async function createCheckoutSession(req: AuthRequest, res: Response, nex
       )
     })
 
+    console.log(
+      "Order items:",
+      userCart.items.map(item => item.product.images.map(image => `${backendUrl}${image}`)),
+    )
+
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       line_items: userCart.items.map(item => ({
@@ -62,12 +67,14 @@ export async function createCheckoutSession(req: AuthRequest, res: Response, nex
           unit_amount: (item.product.discountPrice ?? item.product.price) * 100,
           product_data: {
             name: item.product.name,
-            ...(item.product.images[0] ? { images: [`${backendUrl}/api/uploads/${item.product.images[0]}`] } : {}),
+            images:
+              item.product.images.length > 0 ? item.product.images.map(image => `${backendUrl}${image}`) : undefined,
           },
         },
         quantity: item.quantity,
       })),
       metadata: { orderId },
+      expires_at: Math.floor(Date.now() / 1000) + 30 * 60,
       success_url: `${frontendUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${frontendUrl}/checkout/cancel`,
     })
